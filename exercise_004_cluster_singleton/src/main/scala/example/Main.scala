@@ -26,26 +26,33 @@ object Main {
         """)
       .withFallback(ConfigFactory.load())
 
-
-    val userGuardian = ActorSystem[Nothing](UserGuardian(), "CiscoSystem", config)
+    val userGuardian =
+      ActorSystem[Nothing](UserGuardian(), "CiscoSystem", config)
 
   }
 
   object UserGuardian {
 
-
     def apply(): Behavior[Nothing] = {
       Behaviors.setup[Nothing] { context =>
         if (Cluster(context.system).selfMember.hasRole("manager")) {
-          val manager =
-            context.spawn(Manager(), s"manager-${Random.nextInt(4)}")
+          val singletonManager = ClusterSingleton(context.system)
+          val proxy: ActorRef[Manager.Command] = singletonManager.init(
+            SingletonActor(
+              Behaviors
+                .supervise(Manager())
+                .onFailure[Exception](SupervisionStrategy.restart),
+              "Manager"
+            )
+          )
         }
 
         if (Cluster(context.system).selfMember.hasRole("worker")) {
-          val worker: ActorRef[Worker.Command]  = context.spawn(Worker(0), s"worker-${Random.nextInt(4)}")
-        
+          val worker: ActorRef[Worker.Command] =
+            context.spawn(Worker(0), s"worker-${Random.nextInt(4)}")
 
         }
+
         Behaviors.same
 
       }

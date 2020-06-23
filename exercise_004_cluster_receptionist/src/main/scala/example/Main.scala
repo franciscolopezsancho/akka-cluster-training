@@ -33,17 +33,24 @@ object Main {
 
   object UserGuardian {
 
+    val counterRegisterKey = ServiceKey[Worker.GetCounter]("counterRegistry") //TODO why needs a class? matter which class I pick?
 
     def apply(): Behavior[Nothing] = {
       Behaviors.setup[Nothing] { context =>
         if (Cluster(context.system).selfMember.hasRole("manager")) {
           val manager =
             context.spawn(Manager(), s"manager-${Random.nextInt(4)}")
+          manager ! Manager.Subscribe
+
         }
 
         if (Cluster(context.system).selfMember.hasRole("worker")) {
           val worker: ActorRef[Worker.Command]  = context.spawn(Worker(0), s"worker-${Random.nextInt(4)}")
-        
+          context.system.receptionist ! Receptionist.Register(
+            counterRegisterKey,
+            worker
+          )
+          worker ! Worker.IncreaseOne
 
         }
         Behaviors.same

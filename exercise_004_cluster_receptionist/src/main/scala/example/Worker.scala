@@ -11,25 +11,23 @@ import akka.actor.ActorPath
 
 object Worker {
 
-  val counterRegisterKey = ServiceKey[Worker.getClass()]("counterRegistry") //TODO why needs a class? matter which class I pick?
-
 
   def apply(count: Int): Behavior[Command]=
     Behaviors.setup { context => 
-        context.system.receptionist ! Receptionist.Register(
-            counterRegisterKey,
-            context.self
-          )
       Behaviors.receiveMessage[Command] { 
           case IncreaseOne => 
             context.log.info(s"I'm ${context.self.path} digging by now $count cubits")
             apply(count + 1)
+          case GetCounter(replyTo: ActorRef[Worker.Command])  => 
+            replyTo ! Counter(context.self.path.toString(), count)
+            Behaviors.same
       }
     }
 
   sealed trait Command extends CborSerializer
   case object IncreaseOne extends Command
-  
+  case class GetCounter(replyTo: ActorRef[Nothing]) extends Command
+  case class Counter(actorPath: String, count: Int) extends Command
 
 }
 
