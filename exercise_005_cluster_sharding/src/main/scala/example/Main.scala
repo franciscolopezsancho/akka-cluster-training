@@ -11,6 +11,7 @@ import akka.actor.typed.receptionist.Receptionist
 import scala.util.Random
 import org.slf4j.LoggerFactory
 import akka.cluster.sharding.typed.scaladsl._
+import scala.concurrent.blocking
 
 object Main {
 
@@ -20,11 +21,11 @@ object Main {
 
   def main(args: Array[String]): Unit = {
     val input = 
-      if(args.isEmpty || args.length != 2) {
-        logger.info("No input, falling back to default port: 25520, role: shard and empty workerId")
-        ConsoleInput(25520,"shard","")
+      if(args.isEmpty || args.length < 3) {
+        logger.info("No input, falling back to default port: 25521, role: shard and empty workerId")
+        ConsoleInput(25521,"shard","")
       }
-      else ConsoleInput(args(0).toInt, args(1), args(3))
+      else ConsoleInput(args(0).toInt, args(1), args(2))
 
     val config = ConfigFactory
       .parseString(s"""
@@ -48,14 +49,23 @@ object Main {
         val sharding = ClusterSharding(context.system)
 
         if (Cluster(context.system).selfMember.hasRole("sender")) {
+          sharding.init(Entity(Worker.CounterEntityTypeKey)(entityContext => Worker(0,entityContext.entityId)))
           val workerRef: EntityRef[Worker.Command] = sharding.entityRefFor(Worker.CounterEntityTypeKey, workerId)
           workerRef ! Worker.IncreaseOne
+
+          blocking{
+            Thread.sleep(3000)
+          }
           context.system.terminate
         }
 
         if (Cluster(context.system).selfMember.hasRole("worker")) {
+         sharding.init(Entity(Worker.CounterEntityTypeKey)(entityContext => Worker(0,entityContext.entityId)))
           val worker: ActorRef[Worker.Command] =
             context.spawn(Worker(0,workerId), s"${workerId}")
+          blocking{
+            Thread.sleep(3000)
+          }
           context.system.terminate
 
         }
@@ -63,7 +73,6 @@ object Main {
         if (Cluster(context.system).selfMember.hasRole("shard")) {
           sharding.init(Entity(Worker.CounterEntityTypeKey)(entityContext => Worker(0,entityContext.entityId)))
         }
-
 
         Behaviors.same
 

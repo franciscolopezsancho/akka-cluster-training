@@ -11,7 +11,7 @@ import akka.actor.ActorPath
 
 object Worker {
 
-  val counterRegisterKey = ServiceKey[Worker.getClass()]("counterRegistry") //TODO why needs a class? matter which class I pick?
+  val CounterRegisterKey = ServiceKey[Worker.Command]("counterRegistry") //TODO why needs a class? matter which class I pick?
 
 
   def apply(count: Int): Behavior[Command]=

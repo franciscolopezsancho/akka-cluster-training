@@ -5,3 +5,5 @@ target/
 .idea
 .bloop
 project/
+.vscode
+*.log

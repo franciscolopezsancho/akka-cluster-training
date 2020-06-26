@@ -16,8 +16,10 @@ object Worker {
 
   def apply(count: Int): Behavior[Command]=
     Behaviors.setup { context => 
-      val proxyManager = ActorRef[Manager.Command] = 
-
+        context.system.receptionist ! Receptionist.Register(
+            counterRegisterKey,
+            context.self
+          )
       Behaviors.receiveMessage[Command] { 
           case IncreaseOne => 
             context.log.info(s"I'm ${context.self.path} digging by now $count cubits")
