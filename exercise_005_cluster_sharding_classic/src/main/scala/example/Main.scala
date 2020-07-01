@@ -39,7 +39,9 @@ object Main {
     val userGuardian =
       ActorSystem("CiscoSystem", config)
 
-    val shardManager = userGuardian.actorOf(ShardManager.props)
+
+    val numShards = userGuardian.settings.config.getInt("akka.cluster.sharding.num-shards")
+
 
     if (input.role == "proxy"){
 
@@ -47,13 +49,21 @@ object Main {
       // is diferent from actual one. Question couldn't they form a new ClusterSharding
       // e.g. A A B = > B is proxy but A A B and then B. Would B be ?
 
-      shardManager ! ShardManager.Proxy(input.workerId)
+      // val proxyRef = Worker.startProxy(numShards, userGuardian)
+
+
+      // ClusterSharding(userGuardian).shardRegion(Worker.typeName) ! Worker.IncreaseOne(input.workerId)
+
+      val shard = Worker.startSharding(input.workerId, numShards, userGuardian)
+
+      shard ! Worker.IncreaseOne(input.workerId)
 
     }
 
     if (input.role == "creator"){
 
-      shardManager ! ShardManager.Create(input.workerId)
+      val shard = Worker.startSharding(input.workerId, numShards, userGuardian)
+
     }
 
 
@@ -63,56 +73,4 @@ object Main {
 }
  
 
- object ShardManager {
-
-   case class Proxy(workerId: String)
-
-   case class Create(workerId: String)
-
-   def props = Props(new ShardManager)
- }
-
-  
- class ShardManager extends Actor with ActorLogging {
-
-      import ShardManager._
-
-
-
-        val shardCount = context.system.settings.config.getInt("akka.cluster.sharding.num-shards")
-
-
-        override def receive: Receive = {
-
-          case Proxy(workerId) =>  {
-            val proxy = ClusterSharding(context.system).start(
-              typeName = "Worker",
-              entityProps = Worker.props(workerId),
-              settings = ClusterShardingSettings(context.system),
-              extractEntityId =  Worker.extractEntityId,
-              extractShardId = Worker.extractShardId(shardCount)
-            )
-
-            proxy ! Worker.Envelope(workerId, Worker.Increment)
-           
-
-          }
-
-          case Create(workerId) => 
-            ClusterSharding(context.system).start(
-              typeName = "Worker",
-              entityProps = Worker.props(workerId),
-              settings = ClusterShardingSettings(context.system),
-              extractEntityId =  Worker.extractEntityId,
-              extractShardId = Worker.extractShardId(shardCount)
-            )
-
-
-        
-
-         
-        }
-
-
-    }
 

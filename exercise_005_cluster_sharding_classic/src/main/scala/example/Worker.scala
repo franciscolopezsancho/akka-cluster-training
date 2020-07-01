@@ -12,6 +12,8 @@ object Worker {
 
   def props(workerId: String): Props = Props(new Worker(workerId))
 
+  def typeName = "Worker"
+
   val extractEntityId: ShardRegion.ExtractEntityId = {
     case Envelope(workerId, payload) => (workerId, payload)
     case msg @ IncreaseOne(workerId) => (workerId, msg)
@@ -25,9 +27,9 @@ object Worker {
   }
 
 
-  def startSharding(workerId: String, numShards: Int, system: ActorSystem): Unit = {
+  def startSharding(workerId: String, numShards: Int, system: ActorSystem): ActorRef = {
     ClusterSharding(system).start(
-      typeName = "Worker",
+      typeName = typeName,
       entityProps = Worker.props(workerId),
       settings = ClusterShardingSettings(system),
       extractEntityId = Worker.extractEntityId,
@@ -35,9 +37,9 @@ object Worker {
     )
   }
 
-  def startProxy(numShards: Int, system: ActorSystem): Unit = {
+  def startProxy(numShards: Int, system: ActorSystem): ActorRef = {
     ClusterSharding(system).startProxy(
-      typeName = "Worker",
+      typeName = typeName,
       Some("player-registry"), // role
       extractEntityId = Worker.extractEntityId,
       extractShardId = Worker.extractShardId(numShards)
