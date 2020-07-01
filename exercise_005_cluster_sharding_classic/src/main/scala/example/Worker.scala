@@ -15,7 +15,7 @@ object Worker {
   def typeName = "Worker"
 
   val extractEntityId: ShardRegion.ExtractEntityId = {
-    case Envelope(workerId, payload) => (workerId, payload)
+    case Envelope(workerId, payload) => (workerId, payload) //TODO is anything wrong in here?
     case msg @ IncreaseOne(workerId) => (workerId, msg)
   }
 
@@ -40,7 +40,7 @@ object Worker {
   def startProxy(numShards: Int, system: ActorSystem): ActorRef = {
     ClusterSharding(system).startProxy(
       typeName = typeName,
-      Some("player-registry"), // role
+      Some("creator"), // role
       extractEntityId = Worker.extractEntityId,
       extractShardId = Worker.extractShardId(numShards)
     )

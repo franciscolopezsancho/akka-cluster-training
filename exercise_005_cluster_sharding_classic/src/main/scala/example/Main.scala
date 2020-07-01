@@ -49,14 +49,14 @@ object Main {
       // is diferent from actual one. Question couldn't they form a new ClusterSharding
       // e.g. A A B = > B is proxy but A A B and then B. Would B be ?
 
-      // val proxyRef = Worker.startProxy(numShards, userGuardian)
-
-
-      // ClusterSharding(userGuardian).shardRegion(Worker.typeName) ! Worker.IncreaseOne(input.workerId)
+      // val proxyRef = Worker.startProxy(numShards, userGuardian) // TODO find what's wrong with this
+      // ClusterSharding(userGuardian).shardRegion(Worker.typeName) ! Worker.IncreaseOne(input.workerId) // TODO find what's wrong with this
 
       val shard = Worker.startSharding(input.workerId, numShards, userGuardian)
 
       shard ! Worker.IncreaseOne(input.workerId)
+
+      // shard ! Worker.Envelope(input.workerId, Worker.IncreaseOne(input.workerId))
 
     }
 
