@@ -43,6 +43,10 @@ object Main {
 
     if (input.role == "proxy"){
 
+      //proxy can also be obtained if role when starting the ClusterSharding 
+      // is diferent from actual one. Question couldn't they form a new ClusterSharding
+      // e.g. A A B = > B is proxy but A A B and then B. Would B be ?
+
       shardManager ! ShardManager.Proxy(input.workerId)
 
     }
@@ -75,6 +79,7 @@ object Main {
 
 
 
+        val shardCount = context.system.settings.config.getInt("akka.cluster.sharding.num-shards")
 
 
         override def receive: Receive = {
