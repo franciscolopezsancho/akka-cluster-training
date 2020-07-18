@@ -5,20 +5,11 @@ import com.typesafe.config.ConfigFactory
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.ClusterEvent.MemberEvent
-
+import org.slf4j.LoggerFactory
 
 object Main {
 
-  object UserGuardian {
-
-    def apply(): Behavior[MemberEvent] = {
-      Behaviors.setup[MemberEvent]{ context => 
-        context.log.debug("Starting guardian")
-        context.spawn(ClusterListener(),"Just-Listening")
-        Behaviors.same
-      }
-    }
-  }
+  val logger = LoggerFactory.getLogger(Main.getClass())
 
   def main(args: Array[String]): Unit = {
     val ports = 
@@ -26,17 +17,30 @@ object Main {
         Seq(0)
       else args.toSeq.map(_.toInt)
        
-    ports.foreach(setup _ )
+    ports.foreach(setup)
   }
 
       
   def setup(port: Int) = {
     val config = ConfigFactory
-      .parseString(s"akka.remote.artery.port=$port")
+      .parseString(s"akka.remote.artery.canonical.port=$port")
       .withFallback(ConfigFactory.load())
 
-    ActorSystem[MemberEvent](UserGuardian(), "ClusterListener", config)
 
+    ActorSystem[Nothing](UserGuardian(), "ClusterListener", config)
+
+  }
+
+
+  object UserGuardian {
+
+    def apply(): Behavior[Nothing] = {
+      Behaviors.setup[Nothing]{ context => 
+        context.log.debug("Starting guardian")
+        context.spawn(ClusterListener(),"Just-Listening")
+        Behaviors.same
+      }
+    }
   }
 
 }

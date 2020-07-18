@@ -16,7 +16,7 @@
         </encoder>
     </appender>
 
-    <logger name="example" level="debug" additivity="false">
+    <logger name="com.lightbend.training.akkacollect" level="debug" additivity="false">
         <appender-ref ref="console"/>
         <appender-ref ref="file"/>
     </logger>
@@ -25,7 +25,7 @@
     <logger name="akka.remote.EndpointWriter" level="off" additivity="false"/>
     <logger name="akka.remote.ReliableDeliverySupervisor" level="off" additivity="false"/>
 
-    <root level="debug">
+    <root level="warn">
         <appender-ref ref="console"/>
         <appender-ref ref="file"/>
     </root>
