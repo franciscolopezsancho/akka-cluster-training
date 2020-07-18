@@ -6,29 +6,27 @@ import akka.actor.typed._
 import akka.actor.typed.receptionist.Receptionist
 import akka.actor.typed.receptionist.ServiceKey
 import akka.actor.ActorPath
-
-
-
+import scala.util.Random
 object Worker {
 
+  val CounterRegisterKey = ServiceKey[Worker.Command]("counterRegistry") //TODO why needs a class? matter which class I pick?
 
-  def apply(count: Int): Behavior[Command]=
-    Behaviors.setup { context => 
+  def apply(count: Int): Behavior[Command] =
+    Behaviors.setup { context =>
+      context.system.receptionist ! Receptionist.Register(
+        CounterRegisterKey,
+        context.self
+      )
+
       Behaviors.receiveMessage[Command] { 
-          case IncreaseOne => 
-            context.log.info(s"I'm ${context.self.path} digging by now $count cubits")
-            apply(count + 1)
-          case GetCounter(replyTo: ActorRef[Worker.Command])  => 
-            replyTo ! Counter(context.self.path.toString(), count)
+          case Ping(replyTo: ActorRef[Worker.Pong]) =>
+            replyTo ! Pong(context.self.path.toString(), Random.nextInt(14))
             Behaviors.same
       }
     }
 
   sealed trait Command extends CborSerializer
-  case object IncreaseOne extends Command
-  case class GetCounter(replyTo: ActorRef[Nothing]) extends Command
-  case class Counter(actorPath: String, count: Int) extends Command
+  case class Ping(replyTo: ActorRef[Nothing]) extends Command
+  case class Pong(actorPath: String, count: Int) extends Command
 
 }
-
-

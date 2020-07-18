@@ -26,14 +26,12 @@ object Main {
         """)
       .withFallback(ConfigFactory.load())
 
-
-    val userGuardian = ActorSystem[Nothing](UserGuardian(), "CiscoSystem", config)
+    val userGuardian =
+      ActorSystem[Nothing](UserGuardian(), "CiscoSystem", config)
 
   }
 
   object UserGuardian {
-
-    val counterRegisterKey = ServiceKey[Worker.GetCounter]("counterRegistry") //TODO why needs a class? matter which class I pick?
 
     def apply(): Behavior[Nothing] = {
       Behaviors.setup[Nothing] { context =>
@@ -45,13 +43,8 @@ object Main {
         }
 
         if (Cluster(context.system).selfMember.hasRole("worker")) {
-          val worker: ActorRef[Worker.Command]  = context.spawn(Worker(0), s"worker-${Random.nextInt(4)}")
-          context.system.receptionist ! Receptionist.Register(
-            counterRegisterKey,
-            worker
-          )
-          worker ! Worker.IncreaseOne
-
+          val worker: ActorRef[Worker.Command] =
+            context.spawn(Worker(0), s"worker-${Random.nextInt(4)}")
         }
         Behaviors.same
 

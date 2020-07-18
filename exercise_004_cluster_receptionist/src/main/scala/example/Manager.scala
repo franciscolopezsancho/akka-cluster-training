@@ -20,41 +20,37 @@ object Manager {
       val listingResponseAdapter =
         context.messageAdapter[Receptionist.Listing](ListingResponse)
 
-      val counterMessageAdapter = context.messageAdapter[Worker.Counter](WorkerCounter)
+      val counterMessageAdapter =
+        context.messageAdapter[Worker.Pong](WorkerPong)
 
       Behaviors.receive[Command] { (context, message) =>
         message match {
           case Subscribe =>
             context.system.receptionist ! Receptionist.Subscribe(
-              UserGuardian.counterRegisterKey,
+              Worker.CounterRegisterKey,
               listingResponseAdapter
             )
             Behaviors.same
 
-          case ListingResponse(UserGuardian.counterRegisterKey.Listing(listings)) =>
-            context.log.debug(s"found $listings")
-            listings.foreach { worker => 
-              //initializing
-              if(!currentWorkers.contains(worker.path.toString())) currentWorkers.updated(worker.path.toString(),0)
-            }
-            listings.foreach(actor => actor ! Worker.GetCounter(counterMessageAdapter)) //here's the tricky bit
+          case ListingResponse(
+              Worker.CounterRegisterKey.Listing(listings)
+              ) =>
+            listings.foreach(actor =>
+              actor ! Worker.Ping(counterMessageAdapter)
+            ) //here's the tricky bit
             Behaviors.same
 
-          case WorkerCounter(Worker.Counter(worker, amount)) =>
-            if (currentWorkers.forall{ case (actorPath, counter) => counter > 0 })
-               context.log.info(s"total counter for all workers is ${currentWorkers.values.sum}")
-            else
-              context.log.debug(s"no counter for worker $worker. Initializing to 0")
-              currentWorkers = currentWorkers.updated(worker,amount)
+          case WorkerPong(Worker.Pong(worker, number)) =>
+            context.log.info(s"pong from $worker with random number $number")
             Behaviors.same
         }
 
-      }
+  }
     }
 
   sealed trait Command
   case object Subscribe extends Command
   private case class ListingResponse(listing: Receptionist.Listing)
       extends Command
-  case class WorkerCounter(workerCounter: Worker.Counter) extends Command
+  case class WorkerPong(workerCounter: Worker.Pong) extends Command
 }
