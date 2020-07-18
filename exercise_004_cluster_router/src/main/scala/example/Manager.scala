@@ -13,7 +13,7 @@ object Manager {
   def apply(): Behavior[Command] =
     Behaviors.setup { context =>
 
-      val group  = Routers.group(Worker.counterRegisterKey)
+      val group  = Routers.group(Worker.CounterRegisterKey)
       val router = context.spawn(group, "router")
       Behaviors.receive[Command] { (context, message) =>
         message match {
