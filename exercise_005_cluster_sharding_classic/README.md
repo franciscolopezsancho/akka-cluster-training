@@ -6,14 +6,13 @@ to test:
 
 First create a Sharded Cluster, with the port, the role and the id of the Counter
 
-    sbt "runMain example.Main 25522 shard 123"
-    sbt "runMain example.Main 25521 shard 124"
+    sbt "runMain example.Main 25520 shard 0"
+    sbt "runMain example.Main 25521 shard 0"
 
 Then create a proxy and Increase a counter sending an IncreaseOne to the Counter with id 124. 
 Port below will be 0 which means random. 
 
     sbt "runMain example.Main 0 proxy 124" 
-
 
 
 
@@ -27,3 +26,6 @@ show doesn't mantain state
 
 akka.cluster.sharding.state-store-mode should be not persistent
 
+Seems that if we recuce the cluster to on the entities aren't migrated?
+
+Proxy as API is not working
